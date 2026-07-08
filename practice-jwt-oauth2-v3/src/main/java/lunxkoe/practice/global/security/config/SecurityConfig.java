@@ -2,8 +2,11 @@ package lunxkoe.practice.global.security.config;
 
 import lombok.RequiredArgsConstructor;
 import lunxkoe.practice.global.common.enums.UserRole;
+import lunxkoe.practice.global.security.exception.CustomAccessDeniedHandler;
+import lunxkoe.practice.global.security.exception.CustomAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -31,7 +34,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+            CustomAccessDeniedHandler customAccessDeniedHandler
+
+    ) throws Exception {
 
         http.formLogin(AbstractHttpConfigurer::disable);
         http.httpBasic(AbstractHttpConfigurer::disable);
@@ -43,9 +51,12 @@ public class SecurityConfig {
 
                 .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
+                .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+
                 .requestMatchers("/").permitAll()
                 .requestMatchers("/my/**").hasAnyAuthority(UserRole.USER.name(), UserRole.ADMIN.name())
                 .requestMatchers("/admin/**").hasAuthority(UserRole.ADMIN.name())
+
                 .anyRequest().authenticated()
         );
 
@@ -53,7 +64,10 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
-        // TODO: Security Exception 설정
+        http.exceptionHandling(ex -> ex
+                .authenticationEntryPoint(customAuthenticationEntryPoint)
+                .accessDeniedHandler(customAccessDeniedHandler)
+        );
 
         // TODO: JwtFilter 설정
 
