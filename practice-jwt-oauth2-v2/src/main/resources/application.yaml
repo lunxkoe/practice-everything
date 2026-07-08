@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: practice-jwt-oauth2-v2
+
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/study_db;MODE=MySQL;DB_CLOSE_DELAY=-1 # jdbc:h2:~/study_db, ~/study_db.mv.db
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: lunxkoe@gmail.com
+    password: ${your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+
+jwt:
+  access-secret: vmfhaltmskdlstkfkdgodyroqkfwkdbalroqkfwkdbalaaaaaaaaaaaaaaaabbbbbaccess
+  refresh-secret: vmfhaltmskdlstkfkdgodyroqkfwkdbalroqkfwkdbalaaaaaaaaaaaaaaaabbbbbrefresh
+  access-token-validity-in-seconds: 3600      # 1시간
+  refresh-token-validity-in-seconds: 604800   # 7일
