@@ -21,7 +21,8 @@ public enum ErrorCode {
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "S002", "해당 리소스에 접근할 권한이 없습니다."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "S003", "아이디 또는 비밀번호가 일치하지 않습니다."),
     ACCOUNT_LOCKED(HttpStatus.UNAUTHORIZED, "S004", "계정이 잠겨 있습니다. 관리자에게 문의하세요."),
-    CONCURRENT_LOGIN_DETECTED(HttpStatus.UNAUTHORIZED, "S005", "다른 기기에서 로그인되어 접속이 차단되었습니다."),
+    CONCURRENT_LOGIN_DETECTED(HttpStatus.UNAUTHORIZED, "S005", "중복 로그인 감지 또는 만료된 세션 접근"),
+    // 고민 포인트 다른 기기 로그인 때문에 세션이 만료된건지 분리해야할까?
 
     // Token (모두 401 UNAUTHORIZED 로 통일)
     MISSING_TOKEN(HttpStatus.UNAUTHORIZED, "T001", "요청에 인증 토큰이 포함되지 않았습니다."),

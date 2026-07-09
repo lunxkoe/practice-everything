@@ -21,4 +21,3 @@ services:
     container_name: practice-redis
     ports:
       - "6379:6379" # 기본 Redis 포트인 6379를 열어줍니다.
-    command: redis-server --appendonly yes # 데이터를 디스크에 주기적으로 백업(AOF)하도록 설정합니다.
