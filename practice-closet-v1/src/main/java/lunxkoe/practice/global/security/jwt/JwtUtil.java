@@ -34,7 +34,7 @@ public class JwtUtil {
         this.refreshTokenValidityInMilliseconds = refreshTokenValidityInSeconds * 1000;
     }
 
-    public String createAccessToken(User user, String loginSessionId) {
+    public String createAccessToken(User user, String loginSessionId, boolean isTemp) {
 
         long now = (new Date()).getTime();
         Date validity = new Date(now + this.accessTokenValidityInMilliseconds);
@@ -43,13 +43,14 @@ public class JwtUtil {
                 .subject(user.getExternalId().toString())
                 .claim("role", user.getRole().name())
                 .claim("loginSessionId", loginSessionId)
+                .claim("isTemp", isTemp)
                 .issuedAt(new Date(now))
                 .expiration(validity)
                 .signWith(this.accessSecretKey)
                 .compact();
     }
 
-    public String createRefreshToken(User user, String loginSessionId) {
+    public String createRefreshToken(User user, String loginSessionId, boolean isTemp) {
 
         long now = (new Date()).getTime();
         Date validity = new Date(now + this.refreshTokenValidityInMilliseconds);
@@ -57,6 +58,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(user.getExternalId().toString())
                 .claim("loginSessionId", loginSessionId)
+                .claim("isTemp", isTemp)
                 .issuedAt(new Date(now))
                 .expiration(validity)
                 .signWith(this.refreshSecretKey)

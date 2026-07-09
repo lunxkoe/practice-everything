@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TestController {
 
-    @GetMapping()
-    public String mainP() {
-        log.info("mainP");
-        return "mainP";
-    }
+//    @GetMapping()
+//    public String mainP() {
+//        log.info("mainP");
+//        return "mainP";
+//    }
 
     @GetMapping("/my")
     public String myP() {

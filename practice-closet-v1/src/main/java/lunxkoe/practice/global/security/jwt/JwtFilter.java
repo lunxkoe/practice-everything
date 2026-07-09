@@ -64,6 +64,16 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
+        // 임시 로그인 시 토큰 남용 방어 로직
+        Boolean isTemp = claims.get("isTemp", Boolean.class);
+        log.info(isTemp.toString());
+        String requestURI = request.getRequestURI();
+        if (Boolean.TRUE.equals(isTemp) && !requestURI.equals("/api/auth/change-password")) {
+            log.warn("임시 토큰으로 비정상적인 API 접근 시도 차단! URI: {}, User: {}", requestURI, userExternalId);
+            sendErrorResponse(response, ErrorCode.ACCESS_DENIED);
+            return;
+        }
+
         // 임시 인증 객체 생성
         UserRole role = UserRole.valueOf(claims.get("role", String.class));
 

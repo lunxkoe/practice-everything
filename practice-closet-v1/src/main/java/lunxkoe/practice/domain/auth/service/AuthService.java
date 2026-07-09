@@ -3,6 +3,7 @@ package lunxkoe.practice.domain.auth.service;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lunxkoe.practice.domain.auth.dto.request.ResetPasswordRequest;
 import lunxkoe.practice.domain.auth.dto.request.SignInRequest;
 import lunxkoe.practice.domain.auth.dto.response.JwtDto;
 import lunxkoe.practice.domain.user.entity.User;
@@ -19,10 +20,12 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +38,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, String> redisTemplate;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public JwtDto signIn(SignInRequest request) {
@@ -53,25 +57,28 @@ public class AuthService {
             throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
         } catch (AuthenticationException e) {
             // 그 외 기타 시큐리티 예외
-//            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+            throw new RuntimeException(e.getMessage());
         }
 
         User foundUser = ((CustomUserDetails) authentication.getPrincipal()).getUser();
         String loginSessionId = UUID.randomUUID().toString();
 
+        boolean isTempLogin = "TEMP_LOGIN".equals(authentication.getDetails());
+        long sessionTtl = isTempLogin ? (5 * 60) : jwtUtil.getRefreshTokenValidityInSeconds();
+
         // Redis [Key = 유저아이디, Value = loginSessionId]
         redisTemplate.opsForValue().set(
                 "USER_SESSION:" + foundUser.getExternalId().toString(),
                 loginSessionId,
-                jwtUtil.getRefreshTokenValidityInSeconds(),
+                sessionTtl,
                 TimeUnit.SECONDS
         );
 
         // Access Token 발급
-        String newAccessToken = jwtUtil.createAccessToken(foundUser, loginSessionId);
+        String newAccessToken = jwtUtil.createAccessToken(foundUser, loginSessionId, isTempLogin);
 
         // Refresh Token 발급
-        String newRefreshToken = jwtUtil.createRefreshToken(foundUser, loginSessionId);
+        String newRefreshToken = jwtUtil.createRefreshToken(foundUser, loginSessionId, isTempLogin);
 
         return JwtDto.from(foundUser, newAccessToken, newRefreshToken);
     }
@@ -115,10 +122,10 @@ public class AuthService {
         );
 
         // Access Token 발급
-        String newAccessToken = jwtUtil.createAccessToken(foundUser, newLoginSessionId);
+        String newAccessToken = jwtUtil.createAccessToken(foundUser, newLoginSessionId, false);
 
         // Refresh Token 발급
-        String newRefreshToken = jwtUtil.createRefreshToken(foundUser, newLoginSessionId);
+        String newRefreshToken = jwtUtil.createRefreshToken(foundUser, newLoginSessionId, false);
 
         return JwtDto.from(foundUser, newAccessToken, newRefreshToken);
     }
@@ -127,5 +134,45 @@ public class AuthService {
         String externalId = userDetails.getUser().getExternalId().toString();
         redisTemplate.delete("USER_SESSION:" + externalId);
         log.info("정상적인 로그아웃");
+    }
+
+    @Transactional(readOnly = true)
+    public String resetPassword(ResetPasswordRequest request) {
+
+        User foundUser = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        String tempPassword = generateTempPassword();
+        String encodedPassword = passwordEncoder.encode(tempPassword);
+
+        redisTemplate.opsForValue().set(
+                "TEMP_PWD:" + foundUser.getEmail(),
+                encodedPassword,
+                3,
+                TimeUnit.MINUTES
+        );
+
+        return tempPassword;
+    }
+
+    private String generateTempPassword() {
+        char[] charSet = new char[] {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
+        };
+
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+
+        // 10자리의 임시 비밀번호 생성
+        int idx = 0;
+        for (int i = 0; i < 10; i++) {
+            idx = random.nextInt(charSet.length);
+            sb.append(charSet[idx]);
+        }
+        return sb.toString();
     }
 }
