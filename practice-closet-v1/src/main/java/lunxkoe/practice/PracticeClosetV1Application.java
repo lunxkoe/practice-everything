@@ -1,0 +1,13 @@
+package lunxkoe.practice;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class PracticeClosetV1Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(PracticeClosetV1Application.class, args);
+    }
+
+}
