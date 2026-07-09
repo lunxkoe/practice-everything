@@ -28,7 +28,8 @@ public enum ErrorCode {
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "T002", "만료된 인증 토큰입니다."),
     INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "T003", "유효하지 않은 액세스 토큰입니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "T004", "유효하지 않은 리프레시 토큰입니다."),
-    COMPROMISED_TOKEN(HttpStatus.UNAUTHORIZED, "T005", "토큰 탈취가 의심되어 접근이 차단되었습니다.");
+    COMPROMISED_TOKEN(HttpStatus.UNAUTHORIZED, "T005", "토큰 탈취가 의심되어 접근이 차단되었습니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "T006", "유효하지 않은 토큰입니다.");
 
     private final HttpStatus status;
     private final String code;

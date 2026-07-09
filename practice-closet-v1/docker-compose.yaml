@@ -1,0 +1,24 @@
+services:
+  # 1. MySQL 서비스 설정
+  mysql:
+    image: mysql:8.0 # 사용할 도커 이미지입니다. (스프링 설정의 MySQL8Dialect와 맞춤)
+    container_name: practice-mysql # 도커 컨테이너의 이름입니다.
+    ports:
+      - "3306:3306" # [호스트 포트]:[컨테이너 포트] - 내 컴퓨터의 3306으로 접속하면 도커의 3306으로 연결합니다.
+    environment:
+      TZ: Asia/Seoul # DB의 시간대를 한국 시간으로 설정합니다.
+      MYSQL_ROOT_PASSWORD: root # root 계정의 비밀번호입니다. (실무에선 복잡하게 설정해야 합니다)
+      MYSQL_DATABASE: study_db # 컨테이너가 실행될 때 자동으로 생성할 데이터베이스 이름입니다.
+      MYSQL_USER: user # 어플리케이션에서 사용할 별도의 유저 이름입니다.
+      MYSQL_PASSWORD: pass # 해당 유저의 비밀번호입니다.
+    command:
+      - --character-set-server=utf8mb4 # 한글 및 이모지(utf8mb4)가 깨지지 않도록 기본 인코딩을 설정합니다.
+      - --collation-server=utf8mb4_unicode_ci
+
+  # 2. Redis 서비스 설정
+  redis:
+    image: redis:alpine # 가벼운 알파인 리눅스 기반의 최신 Redis 이미지를 사용합니다.
+    container_name: practice-redis
+    ports:
+      - "6379:6379" # 기본 Redis 포트인 6379를 열어줍니다.
+    command: redis-server --appendonly yes # 데이터를 디스크에 주기적으로 백업(AOF)하도록 설정합니다.

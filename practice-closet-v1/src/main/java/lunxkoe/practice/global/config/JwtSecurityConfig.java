@@ -1,9 +1,13 @@
 package lunxkoe.practice.global.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lunxkoe.practice.global.enums.UserRole;
+import lunxkoe.practice.global.security.jwt.JwtFilter;
+import lunxkoe.practice.global.security.jwt.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -16,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -25,6 +30,10 @@ public class JwtSecurityConfig {
 
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
+
+    private final JwtUtil jwtUtil;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -54,6 +63,7 @@ public class JwtSecurityConfig {
                 .requestMatchers("/admin/**").hasAuthority(UserRole.ADMIN.name())
 
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/sign-in").permitAll()
 
                 .anyRequest().authenticated()
         );
@@ -68,6 +78,7 @@ public class JwtSecurityConfig {
         );
 
         // TODO: JwtFilter 설정 추가
+        http.addFilterBefore(new JwtFilter(jwtUtil, objectMapper, redisTemplate), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
