@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: practice-auth-system-v1
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/study_db?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: user
+    password: pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+#  mail:
+#    host: smtp.gmail.com
+#    port: 587
+#    username: ${CENTURAL_EMAIL_ADDRESS}
+#    password: ${EMAIL_AUTHENTICATON_CODE}
+#    properties:
+#      mail:
+#        smtp.auth: true
+#        smtp.starttls.enable: true
+#        smtp.starttles.required: true
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    open-in-view: false
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+
+server:
+  forward-headers-strategy: framework
+
+jwt:
+  secret: ${JWT_SECRET:c2hvdWxkLWJlLWF0LWxlYXN0LTMyLWJ5dGVzLWxvbmctc2VjcmV0LWtleS1mb3ItaHMyNTY=}
+  access-token-expiration-minutes: 15
+  refresh-token-expiration-days: 14
+
+app:
+  cookie:
+    secure: false
+  admin:
+    email: admin@email.com
+    password: admin
+  frontend:
+    base-url: http://localhost:8080
