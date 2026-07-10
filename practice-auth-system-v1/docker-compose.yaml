@@ -19,3 +19,7 @@ services:
     container_name: practice-redis
     ports:
       - "6379:6379"
+
+# docker exec -it practice-redis redis-cli
+# 127.0.0.1:6379> keys *
+# 127.0.0.1:6379> HGETALL "여기에_확인한_키값_복사해서_붙여넣기"
