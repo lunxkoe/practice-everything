@@ -34,8 +34,7 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(bytes);
     }
 
-    public String createAccessToken(UUID userId, UserRole role, UUID sessionId) {
-        Instant now = Instant.now();
+    public String createAccessToken(UUID userId, UserRole role, UUID sessionId, Instant now) {
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("role", role.name())
@@ -47,15 +46,14 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String createRefreshToken(UUID userId, UUID sessionId, UUID jti) {
-        Instant now = Instant.now();
+    public String createRefreshToken(UUID userId, UUID sessionId, UUID jti, Instant now) {
         return Jwts.builder()
                 .subject(userId.toString())
                 .id(jti.toString())
                 .claim("sid", sessionId.toString())
-                .claim("typ", "access")
+                .claim("typ", "refresh")
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(jwtProperties.accessTokenExpirationMinutes(), ChronoUnit.MINUTES)))
+                .expiration(Date.from(now.plus(jwtProperties.refreshTokenExpirationDays(), ChronoUnit.DAYS)))
                 .signWith(key)
                 .compact();
     }

@@ -51,19 +51,22 @@ public class SessionRegistry {
     }
 
     private UserSession save(UUID userId, UUID sessionId, UUID refreshJti, String userAgent) {
+
+        Instant now = Instant.now();
+        Instant expirationInstant = now.plusSeconds(jwtProvider.getRefreshTokenExpirationSeconds());
+
         String redisKey = key(userId);
         Map<String, String> fields = Map.of(
                 FIELD_SESSION_ID, sessionId.toString(),
                 FIELD_REFRESH_JTI, refreshJti.toString(),
                 FIELD_USER_AGENT, StringUtils.hasText(userAgent) ? userAgent : "unknown",
-                FIELD_ISSUED_AT, Instant.now().toString()
+                FIELD_ISSUED_AT, now.toString()
         );
 
         redisTemplate.opsForHash().putAll(redisKey, fields);
-        redisTemplate.expire(redisKey, Duration.ofSeconds(jwtProvider.getRefreshTokenExpirationSeconds()));
+        redisTemplate.expireAt(redisKey, expirationInstant);
 
-        return new UserSession(sessionId, refreshJti, userAgent, Instant.now());
-        // TODO: 시간을 엄격하게 맞춰야하지 않나?
+        return new UserSession(sessionId, refreshJti, userAgent, now);
     }
 
     private String key(UUID userId) {
