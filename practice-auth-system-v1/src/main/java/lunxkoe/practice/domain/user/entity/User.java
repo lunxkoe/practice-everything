@@ -17,11 +17,11 @@ import java.util.UUID;
 public class User extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long id;
+    @Column(name = "user_internal_id")
+    private Long internal_id;
 
-    @Column(name = "user_externalId", nullable = false, updatable = false)
-    private UUID externalId;
+    @Column(name = "user_id", nullable = false, updatable = false, columnDefinition = "BINARY(16)")
+    private UUID id;
 
     @Column(nullable = false)
     private String name;
@@ -41,7 +41,7 @@ public class User extends BaseTimeEntity {
 
     @Builder
     public User(String name, String email, String password, UserRole role) {
-        this.externalId = UUID.randomUUID();
+        this.id = UUID.randomUUID();
         this.name = name;
         this.email = email;
         this.password = password;

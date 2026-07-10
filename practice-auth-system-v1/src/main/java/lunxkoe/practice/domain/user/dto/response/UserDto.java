@@ -17,7 +17,7 @@ public record UserDto(
 
     public static UserDto from(User user) {
         return new UserDto(
-                user.getExternalId(),
+                user.getId(),
                 user.getCreatedAt(),
                 user.getName(),
                 user.getEmail(),

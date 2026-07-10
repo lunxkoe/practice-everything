@@ -42,9 +42,10 @@ server:
   forward-headers-strategy: framework
 
 jwt:
-  secret: ${JWT_SECRET:c2hvdWxkLWJlLWF0LWxlYXN0LTMyLWJ5dGVzLWxvbmctc2VjcmV0LWtleS1mb3ItaHMyNTY=}
   access-token-expiration-minutes: 15
   refresh-token-expiration-days: 14
+  secret: ${JWT_SECRET:c2hvdWxkLWJlLWF0LWxlYXN0LTMyLWJ5dGVzLWxvbmctc2VjcmV0LWtleS1mb3ItaHMyNTY=}
+# 로컬에서 강력한 시크릿을 바로 만들고 싶다면 openssl rand -base64 64 커맨드
 
 app:
   cookie:

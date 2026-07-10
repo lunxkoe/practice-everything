@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * JSON 형식 오류, 타입 불일치 (String 자리에 Number가 오는 등) 발생 시 - 애초에 클라이언트 앱 자체 문제일 가능성이 높음
+     * JSON 형식 오류, 타입 불일치 (String 자리에 Number가 오는 등) 발생 시
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     protected ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
@@ -40,9 +40,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     protected ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
         log.error("handleCustomException", e);
-        ErrorCode errorCode = e.getErrorCode();
-        ErrorResponse response = ErrorResponse.of(errorCode);
-        return new ResponseEntity<>(response, errorCode.getStatus());
+        ErrorResponse response = ErrorResponse.of(e);
+        return new ResponseEntity<>(response, e.getErrorCode().getStatus());
     }
 
     /**
