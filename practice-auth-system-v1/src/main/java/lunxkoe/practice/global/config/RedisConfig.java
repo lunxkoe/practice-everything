@@ -4,6 +4,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 @Configuration
-//@EnableRedisRepositories(basePackages = "")
+@EnableRedisRepositories(basePackages = "lunxkoe.practice.domain.auth.entity")
 public class RedisConfig {
 }

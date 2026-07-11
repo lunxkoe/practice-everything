@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lunxkoe.practice.domain.auth.dto.request.SignInRequest;
+import lunxkoe.practice.domain.auth.entity.TemporaryPassword;
+import lunxkoe.practice.domain.auth.repository.TemporaryPasswordRepository;
 import lunxkoe.practice.domain.user.dto.response.UserDto;
 import lunxkoe.practice.domain.user.entity.User;
 import lunxkoe.practice.domain.user.repository.UserRepository;
@@ -29,7 +31,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final SessionRegistry sessionRegistry;
-//    private final TemporaryPasswordRepository temporaryPasswordRepository;
+    private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     private final LoginFailureService loginFailureService;
 
@@ -48,8 +50,8 @@ public class AuthService {
         }
 
         // 비밀번호 검증
-        boolean authenticated = passwordEncoder.matches(request.password(), foundUser.getPassword());
-//                || matchesTemporaryPassword(user.getEmail(), rawPassword);
+        boolean authenticated = passwordEncoder.matches(request.password(), foundUser.getPassword())
+                || matchesTemporaryPassword(request.username(), request.password());
 
         // 로그인 실패 처리 (최대 시도 제한 - 계정 잠금)
         if (!authenticated) {
@@ -112,10 +114,10 @@ public class AuthService {
         sessionRegistry.revoke(userId);
     }
 
-//    private boolean matchesTemporaryPassword(String email, String rawPassword) {
-//        return temporaryPasswordRepository.findById(email)
-//                .map(TemporaryPassword::getEncodedPassword)
-//                .map(encoded -> passwordEncoder.matches(rawPassword, encoded))
-//                .orElse(false);
-//    }
+    private boolean matchesTemporaryPassword(String email, String rawPassword) {
+        return temporaryPasswordRepository.findById(email)
+                .map(TemporaryPassword::getEncodedPassword)
+                .map(encoded -> passwordEncoder.matches(rawPassword, encoded))
+                .orElse(false);
+    }
 }

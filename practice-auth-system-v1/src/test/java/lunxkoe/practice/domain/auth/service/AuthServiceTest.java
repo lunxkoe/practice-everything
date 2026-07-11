@@ -2,6 +2,8 @@ package lunxkoe.practice.domain.auth.service;
 
 import io.jsonwebtoken.Claims;
 import lunxkoe.practice.domain.auth.dto.request.SignInRequest;
+import lunxkoe.practice.domain.auth.entity.TemporaryPassword;
+import lunxkoe.practice.domain.auth.repository.TemporaryPasswordRepository;
 import lunxkoe.practice.domain.user.entity.User;
 import lunxkoe.practice.domain.user.repository.UserRepository;
 import lunxkoe.practice.global.exception.CustomException;
@@ -41,6 +43,8 @@ class AuthServiceTest {
     SessionRegistry sessionRegistry;
     @Mock
     LoginFailureService loginFailureService;
+    @Mock
+    TemporaryPasswordRepository temporaryPasswordRepository; // @InjectMocks가 보게 바깥 클래스로 이동
 
     @InjectMocks
     AuthService authService;
@@ -79,6 +83,7 @@ class AuthServiceTest {
             assertThat(result.userDto().email()).isEqualTo("woody@example.com");
             verify(loginFailureService).clearLoginFailure(user.getId());
             verify(loginFailureService, never()).registerLoginFailure(any(User.class));
+            verifyNoInteractions(temporaryPasswordRepository); // 정식 비밀번호가 맞으면 임시 비밀번호 조회 자체를 안 함
         }
 
         @Test
@@ -95,10 +100,11 @@ class AuthServiceTest {
         }
 
         @Test
-        void 비밀번호가_틀리면_INVALID_CREDENTIALS를_던지고_실패_카운트_등록을_위임한다() {
+        void 비밀번호와_임시비밀번호_모두_틀리면_INVALID_CREDENTIALS를_던지고_실패_카운트_등록을_위임한다() {
             User user = sampleUser();
             given(userRepository.findByEmail("woody@example.com")).willReturn(Optional.of(user));
             given(passwordEncoder.matches("wrong-pw", "ENCODED_PW")).willReturn(false);
+            given(temporaryPasswordRepository.findById("woody@example.com")).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.signIn(request("woody@example.com", "wrong-pw"), "chrome"))
                     .isInstanceOf(CustomException.class)
@@ -116,6 +122,7 @@ class AuthServiceTest {
             User user = sampleUser();
             given(userRepository.findByEmail("woody@example.com")).willReturn(Optional.of(user));
             given(passwordEncoder.matches("wrong-pw", "ENCODED_PW")).willReturn(false);
+            given(temporaryPasswordRepository.findById("woody@example.com")).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.signIn(request("ghost@example.com", "아무거나"), "chrome"))
                     .isInstanceOf(CustomException.class)
@@ -141,6 +148,7 @@ class AuthServiceTest {
 
             verifyNoInteractions(passwordEncoder); // 잠긴 계정은 비밀번호가 맞든 틀리든 같은 결과여야 함(타이밍 정보 유출 방지)
             verifyNoInteractions(loginFailureService);
+            verifyNoInteractions(temporaryPasswordRepository);
         }
 
         @Test
@@ -148,6 +156,7 @@ class AuthServiceTest {
             User user = sampleUser();
             given(userRepository.findByEmail("woody@example.com")).willReturn(Optional.of(user));
             given(passwordEncoder.matches("wrong-pw", "ENCODED_PW")).willReturn(false);
+            given(temporaryPasswordRepository.findById("woody@example.com")).willReturn(Optional.empty());
 
             for (int i = 0; i < 5; i++) {
                 assertThatThrownBy(() -> authService.signIn(request("woody@example.com", "wrong-pw"), "chrome"))
@@ -158,24 +167,13 @@ class AuthServiceTest {
             verify(loginFailureService, times(5)).registerLoginFailure(user);
         }
 
-        // =====================================================================================
-        // 아래는 임시 비밀번호(TemporaryPassword) 로그인이 다시 활성화된 이후를 위한 테스트입니다.
-        // AuthService에 `private final TemporaryPasswordRepository temporaryPasswordRepository;` 필드와
-        // matchesTemporaryPassword(...) 주석을 해제하고,
-        // signIn()의 authenticated 계산식에 `|| matchesTemporaryPassword(foundUser.getEmail(), request.password())`를
-        // 다시 붙였을 때 사용하세요. 현재 상태로는 컴파일되지 않으므로 전부 주석 처리합니다.
-        // =====================================================================================
-        /*
-        @Mock
-        TemporaryPasswordRepository temporaryPasswordRepository;
-
         @Test
         void 정식_비밀번호는_틀렸지만_임시_비밀번호가_일치하면_로그인에_성공한다() {
             User user = sampleUser();
             given(userRepository.findByEmail("woody@example.com")).willReturn(Optional.of(user));
             given(passwordEncoder.matches("temp-pw", "ENCODED_PW")).willReturn(false);
 
-            TemporaryPassword tempPassword = new TemporaryPassword("woody@example.com", "ENCODED_TEMP_PW");
+            TemporaryPassword tempPassword = new TemporaryPassword("woody@example.com", "ENCODED_TEMP_PW", 180L);
             given(temporaryPasswordRepository.findById("woody@example.com")).willReturn(Optional.of(tempPassword));
             given(passwordEncoder.matches("temp-pw", "ENCODED_TEMP_PW")).willReturn(true);
 
@@ -220,7 +218,6 @@ class AuthServiceTest {
 
             verify(loginFailureService).registerLoginFailure(user);
         }
-        */
     }
 
     // =========================================================================================
@@ -269,7 +266,7 @@ class AuthServiceTest {
         void sid가_현재_세션과_다르면_SESSION_EXPIRED이며_새로_로그인한_세션은_폐기하지_않는다() {
             UUID userId = UUID.randomUUID();
             UUID tokenSid = UUID.randomUUID();
-            UUID currentSid = UUID.randomUUID(); // 다른 기기에서 재로그인해 세션이 이미 교체된 상태
+            UUID currentSid = UUID.randomUUID();
             Claims claims = fakeClaims(userId, tokenSid, UUID.randomUUID(), "refresh");
             given(jwtProvider.parseClaims("old-device-token")).willReturn(claims);
             given(sessionRegistry.find(userId))
@@ -387,7 +384,6 @@ class AuthServiceTest {
         @Test
         void 이미_세션이_없는_상태에서_다시_호출해도_예외없이_멱등하게_동작한다() {
             UUID userId = UUID.randomUUID();
-            // sessionRegistry.revoke는 Redis DEL이라 키가 없어도 안전한 no-op이어야 함
 
             assertThatCode(() -> authService.signOut(userId)).doesNotThrowAnyException();
             verify(sessionRegistry).revoke(userId);
