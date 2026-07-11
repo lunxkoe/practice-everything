@@ -48,8 +48,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             authenticateAccessToken(token);
         } catch (CustomException e) {
-            ErrorResponseWriter.write(response, objectMapper, e);
-            return;
+//            ErrorResponseWriter.write(response, objectMapper, e);
+//            return;
         }
 
         filterChain.doFilter(request, response);

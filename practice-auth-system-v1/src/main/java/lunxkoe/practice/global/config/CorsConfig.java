@@ -20,10 +20,12 @@ public class CorsConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // REFRESH_TOKEN / XSRF-TOKEN 쿠키 전송에 필수
-        configuration.setExposedHeaders(List.of("Set-Cookie"));
+//        configuration.setExposedHeaders(List.of("Set-Cookie")); // ?
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
+
+// TODO: preflight 공부 후 설정

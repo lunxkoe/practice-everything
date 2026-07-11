@@ -8,6 +8,7 @@ import lunxkoe.practice.domain.auth.dto.request.SignInRequest;
 import lunxkoe.practice.domain.auth.dto.response.JwtDto;
 import lunxkoe.practice.domain.auth.service.AuthService;
 import lunxkoe.practice.global.jwt.RefreshCookieProvider;
+import lunxkoe.practice.global.security.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,5 +33,29 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new JwtDto(result.userDto(), result.accessToken()));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtDto> refresh(
+        @CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken,
+        @RequestHeader(value = "User-Agent", required = false) String userAgent,
+        HttpServletResponse response
+    ) {
+        AuthService.SignInResult result = authService.refresh(refreshToken, userAgent);
+        refreshCookieProvider.attach(response, result.refreshToken());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new JwtDto(result.userDto(), result.accessToken()));
+    }
+
+    @PostMapping("/sign-out")
+    public ResponseEntity<Void> signOut(
+            HttpServletResponse response
+    ) {
+        authService.signOut(SecurityUtils.getCurrentUserId());
+        refreshCookieProvider.clear(response);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 }
