@@ -4,8 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lunxkoe.practice.domain.user.dto.request.ChangePasswordRequest;
 import lunxkoe.practice.domain.user.dto.request.UserCreateRequest;
+import lunxkoe.practice.domain.user.dto.request.UserLockUpdateRequest;
+import lunxkoe.practice.domain.user.dto.request.UserRoleUpdateRequest;
 import lunxkoe.practice.domain.user.dto.response.UserDto;
 import lunxkoe.practice.domain.user.service.UserService;
+import lunxkoe.practice.global.common.enums.UserRole;
 import lunxkoe.practice.global.security.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,5 +40,28 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
+    }
+
+    @PatchMapping("/{userId}/lock")
+    public ResponseEntity<UserDto> updateLock(
+            @PathVariable UUID userId,
+            @RequestBody UserLockUpdateRequest request
+    ) {
+        UserDto response = userService.updateLock(userId, request.locked());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+
+    @PatchMapping("/{userId}/role")
+    public ResponseEntity<UserDto> updateRole(
+            @PathVariable UUID userId,
+            @RequestBody UserRoleUpdateRequest request
+    ) {
+        UserDto response = userService.updateRole(userId, request.role());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 }

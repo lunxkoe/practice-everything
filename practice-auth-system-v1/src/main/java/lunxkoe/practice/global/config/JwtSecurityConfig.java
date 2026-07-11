@@ -70,6 +70,9 @@ public class JwtSecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
 
+                .requestMatchers(HttpMethod.PATCH, "/api/users/*/lock").hasAuthority(UserRole.ADMIN.name())
+                .requestMatchers(HttpMethod.PATCH, "/api/users/*/role").hasAuthority(UserRole.ADMIN.name())
+
                 .anyRequest().authenticated()
         );
 

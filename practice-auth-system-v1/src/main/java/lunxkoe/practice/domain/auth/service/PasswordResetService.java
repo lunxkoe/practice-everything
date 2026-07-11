@@ -2,12 +2,9 @@ package lunxkoe.practice.domain.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import lunxkoe.practice.domain.auth.entity.TemporaryPassword;
-import lunxkoe.practice.domain.auth.mail.MailService;
 import lunxkoe.practice.domain.auth.password.TemporaryPasswordGenerator;
 import lunxkoe.practice.domain.auth.repository.TemporaryPasswordRepository;
 import lunxkoe.practice.domain.user.repository.UserRepository;
-import lunxkoe.practice.global.exception.CustomException;
-import lunxkoe.practice.global.exception.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -5,8 +5,10 @@ import lunxkoe.practice.domain.user.dto.request.UserCreateRequest;
 import lunxkoe.practice.domain.user.dto.response.UserDto;
 import lunxkoe.practice.domain.user.entity.User;
 import lunxkoe.practice.domain.user.repository.UserRepository;
+import lunxkoe.practice.global.common.enums.UserRole;
 import lunxkoe.practice.global.exception.CustomException;
 import lunxkoe.practice.global.exception.ErrorCode;
+import lunxkoe.practice.global.security.SessionRegistry;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,8 +38,15 @@ class UserServiceTest {
     @Mock
     TemporaryPasswordRepository temporaryPasswordRepository;
 
+    @Mock
+    SessionRegistry sessionRegistry;
+
     @InjectMocks
     UserService userService;
+
+    private User sampleUser() {
+        return User.createLocalUser("우디", "woody@example.com", "ENCODED_PW");
+    }
 
     @Nested
     class SignUp {
@@ -79,10 +88,6 @@ class UserServiceTest {
     @Nested
     class ChangePassword {
 
-        private User sampleUser() {
-            return User.createLocalUser("우디", "woody@example.com", "OLD_ENCODED_PW");
-        }
-
         @Test
         void 본인이_아닌_userId로_요청하면_ACCESS_DENIED를_던지고_아무것도_조회하지_않는다() {
             UUID requestUserId = UUID.randomUUID();
@@ -120,6 +125,77 @@ class UserServiceTest {
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
             verifyNoInteractions(temporaryPasswordRepository);
+        }
+    }
+
+    @Nested
+    class UpdateLock {
+
+        @Test
+        void 존재하지_않는_유저면_USER_NOT_FOUND를_던진다() {
+            UUID userId = UUID.randomUUID();
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.updateLock(userId, true))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(e -> ((CustomException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            verifyNoInteractions(sessionRegistry);
+        }
+
+        @Test
+        void locked_true면_계정을_잠그고_세션을_폐기한다() {
+            User user = sampleUser();
+            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+
+            UserDto result = userService.updateLock(user.getId(), true);
+
+            assertThat(user.isLocked()).isTrue();
+            assertThat(result.locked()).isTrue();
+            verify(sessionRegistry).revoke(user.getId());
+        }
+
+        @Test
+        void locked_false면_계정_잠금을_해제하고_세션을_폐기한다() {
+            User user = sampleUser();
+            user.lock();
+            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+
+            UserDto result = userService.updateLock(user.getId(), false);
+
+            assertThat(user.isLocked()).isFalse();
+            assertThat(result.locked()).isFalse();
+            verify(sessionRegistry).revoke(user.getId());
+        }
+    }
+
+    @Nested
+    class UpdateRole {
+
+        @Test
+        void 존재하지_않는_유저면_USER_NOT_FOUND를_던진다() {
+            UUID userId = UUID.randomUUID();
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.updateRole(userId, UserRole.ADMIN))
+                    .isInstanceOf(CustomException.class)
+                    .extracting(e -> ((CustomException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            verifyNoInteractions(sessionRegistry);
+        }
+
+        @Test
+        void 역할을_변경하고_세션을_폐기해_기존_액세스_토큰의_role_클레임을_무효화한다() {
+            User user = sampleUser();
+            given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+
+            UserDto result = userService.updateRole(user.getId(), UserRole.ADMIN);
+
+            assertThat(user.getRole()).isEqualTo(UserRole.ADMIN);
+            assertThat(result.role()).isEqualTo(UserRole.ADMIN);
+            verify(sessionRegistry).revoke(user.getId());
         }
     }
 }

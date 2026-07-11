@@ -6,8 +6,10 @@ import lunxkoe.practice.domain.user.dto.request.UserCreateRequest;
 import lunxkoe.practice.domain.user.dto.response.UserDto;
 import lunxkoe.practice.domain.user.entity.User;
 import lunxkoe.practice.domain.user.repository.UserRepository;
+import lunxkoe.practice.global.common.enums.UserRole;
 import lunxkoe.practice.global.exception.CustomException;
 import lunxkoe.practice.global.exception.ErrorCode;
+import lunxkoe.practice.global.security.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
+    private final SessionRegistry sessionRegistry;
 
     @Transactional
     public UserDto signUp(UserCreateRequest request) {
@@ -53,5 +56,33 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         user.changePassword(passwordEncoder.encode(newRawPassword));
         temporaryPasswordRepository.deleteById(user.getEmail()); // v파기
+    }
+
+    @Transactional
+    public UserDto updateLock(UUID userId, boolean locked) {
+
+        User foundUser = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (locked) {
+            foundUser.lock();
+        } else {
+            foundUser.unlock();
+        }
+
+        sessionRegistry.revoke(userId);
+        return UserDto.from(foundUser);
+    }
+
+    @Transactional
+    public UserDto updateRole(UUID userId, UserRole role) {
+
+        User foundUser = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        foundUser.changeRole(role);
+
+        sessionRegistry.revoke(userId);
+        return UserDto.from(foundUser);
     }
 }
