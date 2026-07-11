@@ -1,7 +1,6 @@
 package lunxkoe.practice.global.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.oauth2.sdk.Role;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,6 +11,7 @@ import lunxkoe.practice.global.common.enums.UserRole;
 import lunxkoe.practice.global.exception.CustomException;
 import lunxkoe.practice.global.exception.ErrorCode;
 import lunxkoe.practice.global.exception.ErrorResponse;
+import lunxkoe.practice.global.exception.ErrorResponseWriter;
 import lunxkoe.practice.global.security.SessionRegistry;
 import lunxkoe.practice.global.security.UserSession;
 import org.springframework.http.HttpHeaders;
@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             authenticateAccessToken(token);
         } catch (CustomException e) {
-            writeError(response, e);
+            ErrorResponseWriter.write(response, objectMapper, e);
             return;
         }
 
@@ -87,12 +87,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role.name()));
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(principal, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authToken);
-    }
-
-    private void writeError(HttpServletResponse response, CustomException e) throws IOException {
-        response.setStatus(e.getErrorCode().getStatus().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(ErrorResponse.of(e)));
     }
 }

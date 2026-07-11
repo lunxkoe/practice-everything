@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lunxkoe.practice.global.common.enums.UserRole;
 import lunxkoe.practice.global.exception.ErrorCode;
 import lunxkoe.practice.global.exception.ErrorResponse;
+import lunxkoe.practice.global.exception.ErrorResponseWriter;
 import lunxkoe.practice.global.jwt.JwtAuthenticationFilter;
 import lunxkoe.practice.global.jwt.JwtProvider;
 import lunxkoe.practice.global.security.SessionRegistry;
@@ -60,11 +61,12 @@ public class JwtSecurityConfig {
                 .requestMatchers("/", "/index.html", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/assets/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                .requestMatchers("/").permitAll()
+                .requestMatchers("/main").permitAll()
                 .requestMatchers("/my/**").hasAnyAuthority(UserRole.USER.name(), UserRole.ADMIN.name())
                 .requestMatchers("/admin/**").hasAuthority(UserRole.ADMIN.name())
 
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/sign-in").permitAll()
 
                 .anyRequest().authenticated()
         );
@@ -72,9 +74,9 @@ public class JwtSecurityConfig {
         // TODO: Exception 설정 추가
         http.exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) ->
-                        writeError(response, ErrorCode.UNAUTHORIZED_REQUEST))
+                        ErrorResponseWriter.write(response, objectMapper, ErrorCode.UNAUTHORIZED_REQUEST))
                 .accessDeniedHandler((request, response, accessDeniedException) ->
-                        writeError(response, ErrorCode.ACCESS_DENIED))
+                        ErrorResponseWriter.write(response, objectMapper, ErrorCode.ACCESS_DENIED))
         );
 
         // TODO: JwtFilter 설정 추가
@@ -86,11 +88,4 @@ public class JwtSecurityConfig {
     }
 
     // TODO: CORS 설정 추가
-
-    private void writeError(HttpServletResponse response, ErrorCode errorCode) throws java.io.IOException {
-        response.setStatus(errorCode.getStatus().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(ErrorResponse.of(errorCode)));
-    }
 }
