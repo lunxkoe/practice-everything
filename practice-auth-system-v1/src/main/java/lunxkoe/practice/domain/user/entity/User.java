@@ -40,7 +40,7 @@ public class User extends BaseTimeEntity {
     private boolean locked;
 
     @Builder
-    public User(String name, String email, String password, UserRole role) {
+    private User(String name, String email, String password, UserRole role) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.email = email;
